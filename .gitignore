@@ -1,0 +1,7 @@
+# 含服务器 IP、root 路径与密钥位置，不公开
+DEPLOYMENT.md
+deploy.sh
+
+# 本地打包产物
+*.tgz
+.DS_Store

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+
+<title>合成小宇宙 · Kiki Games</title>
+<meta name="description" content="在星空里自由拖动月球与八大行星，一路合成太阳。">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23080e22%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2216%22%20fill%3D%22%23d4b887%22%2F%3E%3Cellipse%20cx%3D%2232%22%20cy%3D%2234%22%20rx%3D%2227%22%20ry%3D%229%22%20transform%3D%22rotate%28-25%2032%2034%29%22%20fill%3D%22none%22%20stroke%3D%22%23f3ddb0%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E">
+
+<meta name="theme-color" content="#070c1b">
+<meta name="color-scheme" content="dark">
+<style>:root{color-scheme:dark;--background:#070c1b;--foreground:#e7edf8;--secondary:#111c33;--border:#263552;--muted-foreground:#9caec8;--red:#e28277;--yellow:#f0ce82;--blue:#83b4f4;--green:#91c7ad;--orange:#e9ad75;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#070c1b;color:var(--foreground)}
+*{box-sizing:border-box;touch-action:manipulation}body{margin:0;min-height:100vh;min-height:100dvh;padding:24px 18px max(20px,env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 0, #15213b 0,transparent 65%),#070c1b;font-size:14px;line-height:1.55}h2{font-size:21px;font-weight:600;letter-spacing:.02em}h3{font-size:18px}.text-small{font-size:12px}.text-muted{color:var(--muted-foreground)}.tabular-nums{font-variant-numeric:tabular-nums}.viz-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{font:inherit;color:#d9e5f6;background:#14213a;border:1px solid #2b3d5c;padding:9px 13px;border-radius:12px;cursor:pointer;min-height:42px;touch-action:manipulation;transition:background .15s}.btn:hover{background:#213553}.btn-primary{background:#c8ddfc;color:#10213c;border-color:#c8ddfc;font-weight:600}.btn-primary:hover{background:#e0ebff}.btn[aria-pressed=true]{background:#365e9a;color:#fff;border-color:#608ecf}.btn-ghost{background:transparent;border-color:transparent;color:#9caec8}.btn:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible{outline:2px solid #eac980;outline-offset:4px}.form-range{accent-color:#aacbff;height:28px;margin:2px 0 0;cursor:pointer}.card{background:#101c32;padding:24px;border:1px solid #2b3d5c;border-radius:16px}.site-footer{max-width:540px;margin:18px auto 0;text-align:center;color:#8294af;font-size:11px;line-height:1.9}.site-footer a{color:inherit;text-decoration-color:#3b4b66}#planet-merge .pm-heading{padding-right:0}#pm-canvas{box-shadow:0 12px 60px #0004,inset 0 0 0 1px #b7d0ff10}#pm-chain{font-size:11px;opacity:.8}#pm-status{display:block;min-height:2em}
+.solar-celebration{position:fixed;inset:0;z-index:1000;pointer-events:none;overflow:hidden}.solar-celebration canvas{position:absolute;inset:0;width:100%;height:100%}.solar-title{position:absolute;top:22%;left:12px;right:12px;text-align:center;color:#fff3ce;text-shadow:0 2px 20px #000,0 0 40px #edb858;opacity:0}.solar-title span{display:block;font-size:54px;line-height:1.2;color:#ffdc88}.solar-title strong{display:block;font-size:clamp(25px,6vw,40px);font-weight:650;letter-spacing:.08em}.solar-title small{display:block;font-size:14px;color:#e6d7b6;margin-top:8px}@media(max-width:380px){body{padding:18px 12px}#planet-merge .pm-bar{font-size:12px;gap:4px}.btn{padding:9px 10px}}@media(pointer:coarse){.btn{min-height:44px}.form-range{height:36px}}@media(prefers-reduced-motion:reduce){.btn{transition:none}}
+</style></head><body><script>
+(()=>{const key='codex:visualization-widget-state-v2:'+JSON.stringify([location.pathname,'']);let saved=null;
+try{saved=JSON.parse(localStorage.getItem(key))}catch(_){}
+window.openai={widgetState:saved,setWidgetState:async state=>{try{localStorage.setItem(key,JSON.stringify(state))}catch(_){}}};})();
+</script><script>(()=>{
+let cleanup=()=>{};
+window.stopSolarCelebration=()=>cleanup();
+window.celebrateSun=(originX,originY)=>{
+ cleanup();
+ const layer=document.createElement('div');layer.className='solar-celebration';layer.setAttribute('aria-hidden','true');
+ const sky=document.createElement('canvas');const title=document.createElement('div');title.className='solar-title';
+ title.innerHTML='<span>☀</span><strong>你造出了太阳！</strong><small>这一刻，整个宇宙为你闪耀</small>';
+ layer.append(sky,title);document.body.append(layer);
+ const ctx=sky.getContext('2d'),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let width=innerWidth,height=innerHeight,raf=0,start=null;
+ function resize(){width=innerWidth;height=innerHeight;const d=Math.min(devicePixelRatio||1,2);sky.width=width*d;sky.height=height*d;ctx.setTransform(d,0,0,d,0,0)}
+ resize();window.addEventListener('resize',resize);
+ const fx=Number.isFinite(originX)?originX:width/2,fy=Number.isFinite(originY)?originY:height*.45;
+ const ox=Math.max(0,Math.min(width,fx)),oy=Math.max(height*.2,Math.min(height*.8,fy));
+ const colors=['#fff7cd','#ffd575','#fff','#aed9ff','#cabaff'];
+ const stars=Array.from({length:reduced?36:200},(_,i)=>{
+  const angle=Math.random()*Math.PI*2,speed=(.18+Math.random()*.82)*Math.max(width,height)*.85;
+  return {angle,speed,size:1+Math.random()*3.5,delay:i<140?0:.4+Math.random()*.5,color:colors[i%colors.length],spin:Math.random()*6,life:2.3+Math.random()*2};
+ });
+ cleanup=()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);layer.remove();cleanup=()=>{}};
+ function draw(now){
+  if(start===null)start=now;const t=(now-start)/1000;
+  if(t>5){cleanup();return}
+  ctx.clearRect(0,0,width,height);
+  const fade=Math.min(1,t*3)*Math.min(1,(5-t)/1.2);
+  title.style.opacity=String(fade);title.style.transform=reduced?'none':`translateY(${(1-Math.min(t,1))*16}px)`;
+  const glow=ctx.createRadialGradient(ox,oy,0,ox,oy,Math.max(width,height)*.85);
+  glow.addColorStop(0,`rgba(255,192,73,${fade*.22})`);glow.addColorStop(.45,`rgba(100,115,255,${fade*.09})`);glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
+  if(!reduced){
+   for(let i=0;i<3;i++){const age=t-i*.18;if(age<0||age>2.2)continue;ctx.globalAlpha=(1-age/2.2)*.42;ctx.strokeStyle=i%2?'#b8d9ff':'#ffe4a1';ctx.lineWidth=2-i*.4;ctx.beginPath();ctx.arc(ox,oy,30+age*Math.max(width,height)*.5,0,Math.PI*2);ctx.stroke()}
+  }
+  for(const p of stars){
+   const age=t-p.delay;if(age<0||age>p.life)continue;
+   const travel=reduced?p.speed*.5:p.speed*(1-Math.exp(-age*1.2))*.85;
+   const x=ox+Math.cos(p.angle)*travel,y=oy+Math.sin(p.angle)*travel+(reduced?0:age*age*12);
+   ctx.globalAlpha=Math.min(1,age*8)*Math.pow(1-age/p.life,.7)*fade;ctx.strokeStyle=p.color;ctx.fillStyle=p.color;
+   if(!reduced&&age<1.3){ctx.lineWidth=p.size*.4;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(p.angle)*24*(1-age/1.3),y-Math.sin(p.angle)*24*(1-age/1.3));ctx.stroke()}
+   ctx.save();ctx.translate(x,y);ctx.rotate(p.spin+(reduced?0:age*.4));ctx.beginPath();const r=p.size*(1+Math.sin(age*5+p.spin)*.25);
+   for(let j=0;j<8;j++){const a=j*Math.PI/4,rr=j%2?r*.25:r*2;const px=Math.cos(a)*rr,py=Math.sin(a)*rr;j?ctx.lineTo(px,py):ctx.moveTo(px,py)}
+   ctx.closePath();ctx.fill();ctx.restore();
+  }
+  ctx.globalAlpha=1;raf=requestAnimationFrame(draw);
+ }
+ raf=requestAnimationFrame(draw);
+};
+})();
+</script><div id="planet-merge">
+  <div class="pm-heading"><h2>合成小宇宙 🪐</h2><span class="text-small text-muted">今天的额度，拿来造太阳</span></div>
+  <div class="pm-bar"><span>得分 <strong id="pm-score" class="tabular-nums">0</strong></span><span>最高 <strong id="pm-best" class="tabular-nums">0</strong></span><span><span id="pm-next-label">下一颗</span> <span id="pm-next">🌑</span></span></div>
+  <div class="pm-stage"><canvas id="pm-canvas" class="cursor-interaction" aria-label="合成星球游戏场地；也可使用下方位置滑块和投放按钮操作">合并相同星球，直到合成太阳。</canvas><div id="pm-end" hidden><div class="card"><h3 id="pm-end-title">宇宙装不下啦</h3><p id="pm-end-score"></p><div class="pm-end-actions"><button class="btn btn-primary" id="pm-revive">复活一次 ✨</button><button class="btn" id="pm-again">再造一个宇宙</button></div></div></div></div>
+  <div class="pm-controls"><label class="form-label" for="pm-aim">投放位置<input class="form-range" id="pm-aim" type="range" min="0" max="100" value="50"></label><button class="btn btn-primary" id="pm-drop">投放星球 ↓</button></div>
+  <div class="viz-row"><button class="btn" id="pm-burst" aria-pressed="false">一次 1 颗</button><button class="btn" id="pm-pause">暂停</button><button class="btn" id="pm-sound" aria-pressed="false">音效：关</button><button class="btn btn-ghost" id="pm-reset">重新开始</button></div>
+  <div class="pm-footer text-small"><span id="pm-status" aria-live="polite">点击空白投放 · 按住星球自由拖动，同款碰到就合成</span><div id="pm-chain" aria-label="合成顺序"></div></div>
+</div>
+<style>
+#planet-merge{max-width:480px;margin:0 auto;color:var(--foreground)}
+#planet-merge .pm-heading{padding:4px 0 12px}#planet-merge h2{margin:0 0 4px}
+#planet-merge .pm-bar{display:flex;justify-content:space-between;gap:10px;padding:8px 4px 12px}
+#planet-merge .pm-stage{position:relative}#pm-canvas{display:block;width:100%;height:auto;aspect-ratio:440/500;touch-action:none;border-radius:18px;background:#050a19}
+#pm-end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,var(--background) 75%,transparent);border-radius:18px}#pm-end[hidden]{display:none}#pm-end .card{text-align:center}#pm-end .pm-end-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}#pm-revive[hidden]{display:none}
+#pm-drop.is-cooling{opacity:.4;cursor:default}
+#planet-merge .pm-controls{display:flex;align-items:center;gap:16px;margin:12px 0}#planet-merge .pm-controls label{flex:1;min-width:0}#planet-merge .pm-controls input{display:block;width:100%}
+#planet-merge .pm-footer{padding:12px 0 0;color:var(--muted-foreground)}#pm-chain{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;align-items:center}#pm-chain span{color:var(--foreground)}
+</style>
+<script>
+(()=>{
+const root=document.getElementById('planet-merge'), $=id=>root.querySelector('#'+id), canvas=$('pm-canvas'),ctx=canvas.getContext('2d');
+const W=440,H=500,FLOOR=486,LEFT=12,RIGHT=428,LINE=108;
+const names=['月球','水星','火星','金星','地球','海王星','天王星','土星','木星','太阳'];
+const LAST_LEVEL=names.length-1;
+const emojis=['🌑','⚪','🔴','🟡','🌎','🔵','🔹','🪐','🟠','☀️'];
+const radii=[15,20,26,33,40,49,59,70,82,96];
+const colorVars=['--muted-foreground','--muted-foreground','--red','--yellow','--blue','--blue','--green','--orange','--orange','--yellow'];
+let palette=[],paints=[],fg,bg,border,muted,shine,ink,blush;
+const colorProbe=document.createElement('span');colorProbe.hidden=true;root.append(colorProbe);
+function resolveColor(c){colorProbe.style.color=c;return getComputedStyle(colorProbe).color}
+function tint(a,b,p){return resolveColor('color-mix(in srgb, '+a+' '+p+'%, '+b+')')}
+function colors(){const s=getComputedStyle(root);const get=x=>resolveColor(s.getPropertyValue(x).trim());fg=get('--foreground');bg=get('--secondary');border=get('--border');muted=get('--muted-foreground');palette=colorVars.map(v=>get(v));
+const bright=c=>{const n=c.match(/[\d.]+/g)||[];return Number(n[0])*.299+Number(n[1])*.587+Number(n[2])*.114};shine=bright(fg)>bright(bg)?fg:bg;ink=bright(fg)>bright(bg)?bg:fg;blush=tint(get('--red'),shine,62);
+paints=palette.map(c=>({light:tint(c,shine,28),base:tint(c,shine,61),edge:tint(c,ink,78),detail:tint(c,ink,58)}))}
+colors();new MutationObserver(colors).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme']});
+function resize(){const d=Math.min(window.devicePixelRatio||1,2);canvas.width=W*d;canvas.height=H*d;ctx.setTransform(d,0,0,d,0,0)}resize();
+let bodies=[],particles=[],score=0,best=0,current=[],next=[],aim=W/2,cooldown=0,paused=false,over=false,danger=0,sound=false,audio=null,uid=0,clock=0,lastMerge=-10,combo=0,won=false;
+let pointer=null,drag=null,reviveUsed=false,silentMerge=false;
+const random=()=>Math.random()<.45?0:Math.random()<.65?1:2;
+// 一次投放一组，横向排开；冷却不变，所以是「一次顶三次」而不是把盘面填得更快。
+const GAP=4;let burstSize=1;
+const randomSet=()=>Array.from({length:burstSize},random);
+function groupWidth(levels){return levels.reduce((s,l)=>s+radii[l]*2,0)+GAP*(levels.length-1)}
+function burstLayout(levels,centerX){const out=[];let x=centerX-groupWidth(levels)/2;for(const l of levels){out.push(x+radii[l]);x+=radii[l]*2+GAP}return out}
+function readState(state){const p=state?.privateContent;if(!p)return;if(Number.isFinite(p.best)){best=Math.max(best,p.best);$('pm-best').textContent=best}if(p.burst===1||p.burst===3)burstSize=p.burst}
+readState(window.openai?.widgetState);
+window.addEventListener('openai:set_globals',e=>readState(e.detail?.globals?.widgetState));
+function save(){try{window.openai?.setWidgetState({modelContent:{game:'合成小宇宙',bestScore:best},privateContent:{best,burst:burstSize}})?.catch(()=>{})}catch(e){}}
+function status(t){$('pm-status').textContent=t}
+function ui(){$('pm-score').textContent=score;$('pm-best').textContent=best;
+$('pm-next').textContent=burstSize>1?next.map(l=>emojis[l]).join(' '):emojis[next[0]]+' '+names[next[0]];
+$('pm-next-label').textContent=burstSize>1?'下一组':'下一颗';
+$('pm-burst').textContent='一次 '+burstSize+' 颗';$('pm-burst').setAttribute('aria-pressed',String(burstSize>1));
+$('pm-drop').textContent=burstSize>1?'投放 '+burstSize+' 颗 ↓':'投放星球 ↓';
+setDropState()}
+// 冷却时只变灰、不用 disabled：iOS 上禁用的按钮不算可交互元素，touch-action 失效，
+// 连点第二下就会被当成「连点空白」而触发双击缩放。drop() 自己有冷却判断，点了也是空转。
+function setDropState(){const b=$('pm-drop'),off=over||paused||cooldown>0;b.setAttribute('aria-disabled',String(off));b.classList.toggle('is-cooling',off)}
+names.forEach((n,i)=>{const s=document.createElement('span');s.textContent=n;s.setAttribute('data-tooltip',n);$('pm-chain').append(s);if(i<LAST_LEVEL)$('pm-chain').append(document.createTextNode('›'))});
+// Create/resume synchronously from a user gesture; schedule notes only after resume.
+let master=null;
+function prepareAudio(){
+ try{
+  if(!sound)return Promise.resolve(false);
+  if('audioSession' in navigator)try{navigator.audioSession.type='playback'}catch(_){}
+  if(!audio||audio.state==='closed'){
+   const AudioEngine=window.AudioContext||window.webkitAudioContext;
+   if(!AudioEngine)throw new Error('Audio unavailable');
+   audio=new AudioEngine();master=audio.createGain();master.gain.value=.8;master.connect(audio.destination);
+  }
+  master.gain.setValueAtTime(.8,audio.currentTime);
+  const ready=audio.state==='running'?Promise.resolve():audio.resume();
+  return ready.then(()=>{const ok=audio.state==='running';if(!ok)status('音效还没唤醒，再点一次音效按钮试试');return ok}).catch(()=>{status('音效未能启动，请重新开启音效');return false});
+ }catch(_){status('这个浏览器暂时无法播放音效');return Promise.resolve(false)}
+}
+function playNote(frequency,at,length=.32,volume=.15){
+ const o=audio.createOscillator(),g=audio.createGain();o.type='sine';
+ o.frequency.setValueAtTime(frequency,at);o.frequency.exponentialRampToValueAtTime(frequency*1.45,at+.1);
+ g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(volume,at+.012);g.gain.exponentialRampToValueAtTime(.0001,at+length);
+ o.connect(g);g.connect(master);o.start(at);o.stop(at+length+.03);o.onended=()=>{o.disconnect();g.disconnect()};
+}
+function tone(level){if(!sound||silentMerge)return;prepareAudio().then(ok=>{if(!ok||!sound)return;playNote(220*Math.pow(1.19,level),audio.currentTime+.015)})}
+function reviveSound(){if(!sound)return;prepareAudio().then(ok=>{if(!ok||!sound)return;const start=audio.currentTime+.02;[392,523.25,659.25,880].forEach((f,i)=>playNote(f,start+i*.09,.55,.13))})}
+function victorySound(){if(!sound)return;prepareAudio().then(ok=>{if(!ok||!sound)return;const start=audio.currentTime+.02;[523.25,659.25,783.99,1046.5,1318.5,1567.98].forEach((f,i)=>playNote(f,start+i*.14,.7,.12))})}
+root.addEventListener('pointerdown',()=>{if(sound)prepareAudio()},{passive:true});
+root.addEventListener('keydown',()=>{if(sound)prepareAudio()});
+
+// 复活清扫：最多扫到地球，海王星及以上是辛苦合出来的，不动。
+const SWEEP_CAP=4,SAFE_AREA=(RIGHT-LEFT)*(FLOOR-LINE)*.4;
+function liveArea(){let s=0;for(const b of bodies)if(!b.dead)s+=Math.PI*b.r*b.r;return s}
+function ball(x,y,level,vx=0,vy=0){return{id:++uid,x,y,vx,vy,level,r:radii[level],age:0,dead:false}}
+function clampAim(x){const half=groupWidth(current)/2;return Math.max(LEFT+half+2,Math.min(RIGHT-half-2,x))}
+function drop(){if(over||paused||cooldown>0)return;aim=clampAim(aim);
+const xs=burstLayout(current,aim);current.forEach((l,i)=>bodies.push(ball(xs[i],53,l,0,25+i*5)));
+current=next;next=randomSet();cooldown=.55;aim=clampAim(aim);tone(0);ui()}
+function reset(){window.stopSolarCelebration?.();releasePointer();bodies=[];particles=[];score=0;current=randomSet();next=randomSet();cooldown=0;paused=false;over=false;danger=0;clock=0;won=false;lastMerge=-10;combo=0;reviveUsed=false;$('pm-end').hidden=true;$('pm-pause').textContent='暂停';status('点击空白投放 · 按住星球自由拖动，同款碰到就合成');ui()}
+function finish(){releasePointer();over=true;$('pm-end').hidden=false;$('pm-revive').hidden=reviveUsed;$('pm-end-score').textContent='这次创造了 '+score+' 分的宇宙 ✨';status(reviveUsed?'本局结束，最高分 '+best:'还能复活一次 ✨');save();ui()}
+// 复活：合并负责出分和爽感（但面积只减约 11%），扫掉月球和水星才是真正腾出空间的那一步。
+// 这两级是投放时最常出的，马上就会补回来，不会断了合成燃料。每局只能用一次。
+function revive(){
+ if(!over||reviveUsed)return;
+ reviveUsed=true;over=false;$('pm-end').hidden=true;
+ silentMerge=true;
+ const groups=new Map();
+ for(const b of bodies){if(b.dead||b.level>=LAST_LEVEL)continue;if(!groups.has(b.level))groups.set(b.level,[]);groups.get(b.level).push(b)}
+ let merged=0;
+ // 从高等级往低合，这样本轮新生成的球不会又被当成同级再合一次
+ for(const level of [...groups.keys()].sort((a,b)=>b-a)){
+  const list=groups.get(level).filter(b=>!b.dead);
+  for(let i=0;i+1<list.length;i+=2){merge(list[i],list[i+1]);merged++}
+ }
+ silentMerge=false;
+ // 只清零计时是不够的：警戒线以上只要还留着球，计时立刻又开始累积，等于没复活。
+ // 所以从最小的等级往上扫，扫到占用面积真的降到安全线以下为止。
+ let swept=0;
+ for(let lv=0;lv<=SWEEP_CAP&&liveArea()>SAFE_AREA;lv++){
+  for(const b of bodies){if(b.dead||b.level!==lv)continue;burst(b.x,b.y,b.level);b.dead=true;swept++}
+ }
+ bodies=bodies.filter(b=>!b.dead);
+ for(const b of bodies)b.age=0;// 让剩下的球重新开始计时，落稳之前不会被判越界
+ danger=0;combo=0;lastMerge=-10;cooldown=.45;
+ reviveSound();ui();
+ status('复活 ✨ 合并 '+merged+' 对、扫走 '+swept+' 颗小星球 · 本局仅此一次');
+}
+function burst(x,y,level){for(let i=0;i<16;i++){const a=Math.random()*Math.PI*2,v=45+Math.random()*110;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.65,max:.65,level})}}
+function merge(a,b){a.dead=b.dead=true;const l=a.level+1,x=(a.x+b.x)/2,y=(a.y+b.y)/2;
+const c=ball(Math.max(LEFT+radii[l],Math.min(RIGHT-radii[l],x)),Math.min(FLOOR-radii[l],y),l,(a.vx+b.vx)*.3,-35);c.age=.4;bodies.push(c);
+if(drag&&(drag.body===a||drag.body===b)){drag.body=c;pinDragged()}
+combo=clock-lastMerge<1.1?combo+1:1;lastMerge=clock;score+=Math.pow(2,l)*10;best=Math.max(best,score);burst(x,y,l);tone(l);ui();save();
+if(l===LAST_LEVEL){won=true;const rect=canvas.getBoundingClientRect();window.celebrateSun(rect.left+c.x/W*rect.width,rect.top+c.y/H*rect.height);victorySound();status('太阳诞生了！☀️ 你真的把宇宙搓出来了，继续冲分！')}
+else status((combo>1?'连锁 ×'+combo+'！':'合成！')+emojis[l]+' '+names[l]+'  +'+Math.pow(2,l)*10+' 分');}
+function step(dt){clock+=dt;cooldown=Math.max(0,cooldown-dt);
+for(const b of bodies){b.age+=dt;if(drag?.body===b){pinDragged();continue}b.vy+=650*dt;b.vx*=Math.exp(-.6*dt);b.vy*=Math.exp(-.1*dt);b.x+=b.vx*dt;b.y+=b.vy*dt}
+for(let pass=0;pass<7;pass++){
+for(const b of bodies){if(b.dead)continue;if(b.x-b.r<LEFT){b.x=LEFT+b.r;b.vx=Math.abs(b.vx)*.22}if(b.x+b.r>RIGHT){b.x=RIGHT-b.r;b.vx=-Math.abs(b.vx)*.22}if(b.y+b.r>FLOOR){b.y=FLOOR-b.r;b.vy=b.vy>25?-b.vy*.16:0;b.vx*=.94}}
+const count=bodies.length;
+for(let i=0;i<count;i++){const a=bodies[i];if(a.dead)continue;for(let j=i+1;j<count;j++){const b=bodies[j];if(b.dead||a.dead)continue;let dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy),min=a.r+b.r;if(dist>=min)continue;
+if(a.level===b.level&&a.level<LAST_LEVEL&&a.age>.1&&b.age>.1){merge(a,b);continue}
+if(dist<.001){dx=.01;dy=0;dist=.01}const nx=dx/dist,ny=dy/dist,wa=drag?.body===a?0:1/(a.r*a.r),wb=drag?.body===b?0:1/(b.r*b.r),sum=wa+wb,correction=Math.max(0,min-dist-.03)*.85;
+a.x-=nx*correction*wa/sum;a.y-=ny*correction*wa/sum;b.x+=nx*correction*wb/sum;b.y+=ny*correction*wb/sum;
+const vn=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(vn<0){const impulse=-(1.12)*vn/sum;a.vx-=impulse*wa*nx;a.vy-=impulse*wa*ny;b.vx+=impulse*wb*nx;b.vy+=impulse*wb*ny;
+const tangent=(b.vx-a.vx)*(-ny)+(b.vy-a.vy)*nx;const friction=Math.max(-impulse*.12,Math.min(impulse*.12,-tangent/sum));a.vx-=friction*wa*(-ny);a.vy-=friction*wa*nx;b.vx+=friction*wb*(-ny);b.vy+=friction*wb*nx}
+}}
+}
+bodies=bodies.filter(b=>!b.dead);const high=bodies.some(b=>b!==drag?.body&&b.age>2&&b.y-b.r<LINE);danger=high?danger+dt:Math.max(0,danger-dt*3);if(danger>2.5)finish();
+for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=100*dt}particles=particles.filter(p=>p.life>0);setDropState();
+}
+const artCache=new Map();
+const spacePalettes=[['#cfced3','#787989'],['#b9b0a4','#686463'],['#d38b66','#733e42'],['#f0d9a3','#b69863'],['#479bd4','#123775'],['#6f9ac6','#2b547d'],['#afdfdf','#689da6'],['#e2c99c','#827363'],['#d4a87d','#70514f'],['#fff4ac','#f98625']];
+function hash(x,y){const v=Math.sin(x*127.1+y*311.7)*43758.5453;return v-Math.floor(v)}
+function noise(x,y){const ix=Math.floor(x),iy=Math.floor(y);let u=x-ix,v=y-iy;u=u*u*(3-2*u);v=v*v*(3-2*v);return (hash(ix,iy)*(1-u)+hash(ix+1,iy)*u)*(1-v)+(hash(ix,iy+1)*(1-u)+hash(ix+1,iy+1)*u)*v}
+function fbm(x,y){return noise(x,y)*.57+noise(x*2.1,y*2.1)*.28+noise(x*4.3,y*4.3)*.15}
+function rgb(hex){return [1,3,5].map(i=>parseInt(hex.slice(i,i+2),16))}
+function planetSprite(l){if(artCache.has(l))return artCache.get(l);const r=radii[l],scale=2.5,size=Math.ceil(r*2.5*scale),c=document.createElement('canvas');c.width=c.height=size;const g=c.getContext('2d'),mid=size/2,R=r*scale,bodyR=l===7?R*.73:R*.96;
+const halo=g.createRadialGradient(mid,mid,bodyR*.86,mid,mid,R*1.24);halo.addColorStop(0,spacePalettes[l][0]+(l===9?'66':'22'));halo.addColorStop(1,spacePalettes[l][0]+'00');g.fillStyle=halo;g.fillRect(0,0,size,size);
+function ring(front){g.save();g.translate(mid,mid);g.rotate(-.35);g.scale(1,.32);for(let i=0;i<22;i++){g.strokeStyle=i%5===0?'#76695a':i%3===0?'#e1d3b5':'#b5a991';g.globalAlpha=.65;g.lineWidth=R*.009;g.beginPath();g.arc(0,0,R*(.82+i*.008),front?0:Math.PI,front?Math.PI:Math.PI*2);g.stroke()}g.restore()}
+if(l===7)ring(false);
+const image=g.getImageData(0,0,size,size),data=image.data,base=rgb(spacePalettes[l][0]),dark=rgb(spacePalettes[l][1]);
+for(let py=Math.floor(mid-bodyR);py<=Math.ceil(mid+bodyR);py++)for(let px=Math.floor(mid-bodyR);px<=Math.ceil(mid+bodyR);px++){const x=(px-mid)/bodyR,y=(py-mid)/bodyR,rr=x*x+y*y;if(rr>=1)continue;const z=Math.sqrt(1-rr),u=Math.atan2(x,z),v=Math.asin(y),n=fbm(u*4+l*13,v*5+4);let mix=n,land=false;
+if(l===3||l>=5&&l<=8){const strength=l===6?.025:l===5?.06:.18;mix=.57+strength*Math.sin(y*(l===8?36:20)+n*7)+n*(l===6?.08:.18)}
+if(l===4){land=fbm(u*3.3+8,v*3.8+5)>.53;mix=n}
+if(l===2)mix=fbm(u*7+18,v*7)+.14*Math.sin(u*12+v*8);
+let col=base.map((b,k)=>dark[k]+(b-dark[k])*mix);
+if(l===4){col=land?[53+n*74,86+n*90,65+n*39]:[14+n*21,53+n*58,112+n*61];const cloud=fbm(u*9+fbm(u*3,v*3)*3,v*12+3);if(cloud>.62){const a=Math.min(.88,(cloud-.62)*5);col=col.map(q=>q*(1-a)+235*a)}}
+if(l===0||l===1||l===2){for(let j=0;j<(l===1?13:7);j++){const cx=hash(j+11,l)*1.6-.8,cy=hash(j+67,l+3)*1.6-.8,cr=.035+hash(j+27,l+7)*.10,d=Math.hypot(x-cx,y-cy)/cr;if(d<1.2){const dent=d<.8?.76:1.12;col=col.map(q=>q*dent)}}}
+if(l===8){const spot=((x-.35)/.20)**2+((y-.28)/.10)**2;if(spot<1)col=col.map((q,k)=>q*.6+[162,83,55][k]*.4)}
+let light=.16+.90*Math.max(0,-x*.49-y*.43+z*.76);if(l===9){light=.85+.2*n;col=[255,151+n*101,28+n*121];const gran=noise(u*80,v*80);col=col.map(q=>q*(.85+.18*gran))}
+const rim=Math.pow(1-z,5)*(l===4?.58:.22);const idx=(py*size+px)*4;for(let k=0;k<3;k++)data[idx+k]=Math.min(255,col[k]*light+base[k]*rim);data[idx+3]=Math.min(255,(1-rr)*bodyR*255)}
+g.putImageData(image,0,0);if(l===7)ring(true);artCache.set(l,c);return c}
+function planet(x,y,r,l,alpha=1){const art=planetSprite(l);ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(art,x-r*1.25,y-r*1.25,r*2.5,r*2.5);ctx.restore()}
+const spaceCanvas=document.createElement('canvas');spaceCanvas.width=W*2;spaceCanvas.height=H*2;const sky=spaceCanvas.getContext('2d');sky.scale(2,2);
+const skyGradient=sky.createLinearGradient(0,0,W,H);skyGradient.addColorStop(0,'#030713');skyGradient.addColorStop(.5,'#0b1229');skyGradient.addColorStop(1,'#040917');sky.fillStyle=skyGradient;sky.fillRect(0,0,W,H);
+for(let i=0;i<65;i++){const x=35+i*6+Math.sin(i*.5)*38,y=H-i*7+Math.cos(i*.7)*42,r=35+hash(i,8)*75;const haze=sky.createRadialGradient(x,y,0,x,y,r);haze.addColorStop(0,i%3===0?'rgba(111,71,159,.035)':'rgba(44,104,145,.035)');haze.addColorStop(1,'rgba(12,20,40,0)');sky.fillStyle=haze;sky.fillRect(x-r,y-r,r*2,r*2)}
+for(let i=0;i<650;i++){const x=hash(i,1)*W,y=hash(i,2)*H,rr=.18+Math.pow(hash(i,3),7)*1.05;sky.globalAlpha=.2+hash(i,4)*.65;sky.fillStyle=i%5===0?'#9cbfe9':i%7===0?'#e9d6bb':'#d9e3f4';sky.beginPath();sky.arc(x,y,rr,0,Math.PI*2);sky.fill();if(rr>.96){const glow=sky.createRadialGradient(x,y,0,x,y,6);glow.addColorStop(0,'#accdff66');glow.addColorStop(1,'#accdff00');sky.fillStyle=glow;sky.fillRect(x-6,y-6,12,12)}}sky.globalAlpha=1;
+function draw(){ctx.clearRect(0,0,W,H);ctx.drawImage(spaceCanvas,0,0,W,H);
+ctx.strokeStyle=danger>0?'#ff978d':'#718bad55';ctx.lineWidth=1;ctx.setLineDash([5,6]);ctx.beginPath();ctx.moveTo(LEFT,LINE);ctx.lineTo(RIGHT,LINE);ctx.stroke();ctx.setLineDash([]);
+ctx.fillStyle=danger>0?'#ffb1a6':'#9daec7';ctx.font='12px system-ui';ctx.textAlign='right';ctx.fillText(danger>0?'快满了！ '+Math.max(0,2.5-danger).toFixed(1)+'s':'宇宙边界',RIGHT-5,LINE-9);
+ctx.strokeStyle='#7da4ce55';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(LEFT,LINE+8);ctx.lineTo(LEFT,FLOOR-12);ctx.quadraticCurveTo(LEFT,FLOOR,LEFT+12,FLOOR);ctx.lineTo(RIGHT-12,FLOOR);ctx.quadraticCurveTo(RIGHT,FLOOR,RIGHT,FLOOR-12);ctx.lineTo(RIGHT,LINE+8);ctx.stroke();
+if(!over){const xs=burstLayout(current,aim),maxR=Math.max(...current.map(l=>radii[l]));
+ctx.save();ctx.globalAlpha=.28;ctx.setLineDash([3,7]);ctx.strokeStyle='#c4d5ed';ctx.beginPath();ctx.moveTo(aim,53+maxR+7);ctx.lineTo(aim,FLOOR);ctx.stroke();ctx.restore();
+current.forEach((l,i)=>planet(xs[i],53,radii[l],l,cooldown>0?.4:.9))}
+for(const b of bodies)planet(b.x,b.y,b.r,b.level);for(const p of particles){ctx.globalAlpha=p.life/p.max;ctx.fillStyle=palette[p.level];ctx.beginPath();ctx.arc(p.x,p.y,3*p.life/p.max,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
+if(drag){const b=drag.body;ctx.strokeStyle='#e0efff';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(b.x,b.y,b.r+5,0,Math.PI*2);ctx.stroke();ctx.setLineDash([])}
+if(paused&&!over){ctx.fillStyle='#050b1b';ctx.globalAlpha=.85;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;ctx.fillStyle='#e0efff';ctx.textAlign='center';ctx.font='20px system-ui';ctx.fillText('宇宙暂停营业 💤',W/2,H/2)}
+}
+function coords(e){const rect=canvas.getBoundingClientRect();return{x:(e.clientX-rect.left)/rect.width*W,y:(e.clientY-rect.top)/rect.height*H}}
+function point(e){aim=clampAim(coords(e).x);$('pm-aim').value=(aim-LEFT)/(RIGHT-LEFT)*100}
+function pinDragged(){if(!drag)return;const b=drag.body;b.x=Math.max(LEFT+b.r,Math.min(RIGHT-b.r,drag.x));b.y=Math.max(b.r+5,Math.min(FLOOR-b.r,drag.y));b.vx=b.vy=0}
+function moveDragged(e){const p=coords(e);drag.x=p.x+drag.ox;drag.y=p.y+drag.oy;pinDragged()}
+function releasePointer(){if(drag){drag.body.vx=drag.body.vy=0;drag.body.age=0}const id=pointer;pointer=null;drag=null;canvas.style.cursor='';if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id)}
+canvas.addEventListener('pointermove',e=>{if(over||paused||(pointer!==null&&pointer!==e.pointerId))return;if(drag)moveDragged(e);else point(e)});
+canvas.addEventListener('pointerdown',e=>{if(over||paused||pointer!==null||e.button>0)return;pointer=e.pointerId;canvas.setPointerCapture(e.pointerId);const p=coords(e);const hit=[...bodies].reverse().find(b=>!b.dead&&Math.hypot(b.x-p.x,b.y-p.y)<=b.r);if(hit){drag={body:hit,x:hit.x,y:hit.y,ox:hit.x-p.x,oy:hit.y-p.y};pinDragged();canvas.style.cursor='grabbing';status('宇宙之手 ✨ 拖到同款旁边，合成后也能继续拖！')}else point(e)});
+canvas.addEventListener('pointerup',e=>{if(pointer!==e.pointerId)return;if(!over&&!paused){if(drag)moveDragged(e);else{point(e);drop()}}releasePointer()});
+canvas.addEventListener('pointercancel',e=>{if(pointer===e.pointerId)releasePointer()});
+canvas.addEventListener('lostpointercapture',e=>{if(pointer===e.pointerId)releasePointer()});
+$('pm-aim').addEventListener('input',e=>{aim=clampAim(LEFT+(RIGHT-LEFT)*Number(e.target.value)/100)});
+$('pm-drop').addEventListener('click',drop);
+// 触摸时自己接管：吃掉默认行为（连带合成的 click），点多快都只是投球，不会放大页面。
+$('pm-drop').addEventListener('touchend',e=>{const t=e.changedTouches[0],r=$('pm-drop').getBoundingClientRect();
+if(!t||t.clientX<r.left||t.clientX>r.right||t.clientY<r.top||t.clientY>r.bottom)return;
+e.preventDefault();drop()},{passive:false});$('pm-again').addEventListener('click',reset);$('pm-reset').addEventListener('click',reset);$('pm-revive').addEventListener('click',revive);
+// 切换单发/三连发：当前待投的一组按新数量重新发牌，已落下的星球不受影响。
+$('pm-burst').addEventListener('click',()=>{burstSize=burstSize>1?1:3;current=randomSet();next=randomSet();aim=clampAim(aim);save();ui();status(burstSize>1?'三连发 ✨ 一次投 3 颗，横着排开落下':'回到单发 · 一次投 1 颗')});
+$('pm-pause').addEventListener('click',()=>{if(over)return;releasePointer();paused=!paused;$('pm-pause').textContent=paused?'继续':'暂停';ui()});
+$('pm-sound').addEventListener('click',()=>{sound=!sound;$('pm-sound').textContent=sound?'音效：开':'音效：关';$('pm-sound').setAttribute('aria-pressed',String(sound));if(sound)tone(3);else{if(master)master.gain.setValueAtTime(0,audio.currentTime);if('audioSession' in navigator)try{navigator.audioSession.type='auto'}catch(_){}}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!over){releasePointer();paused=true;$('pm-pause').textContent='继续';ui()}});
+let previous=0,accumulator=0;
+function frame(t){const elapsed=previous?Math.min((t-previous)/1000,.05):0;previous=t;if(!paused&&!over){accumulator+=elapsed;while(accumulator>=1/120){step(1/120);accumulator-=1/120;if(over)break}}else accumulator=0;draw();requestAnimationFrame(frame)}
+reset();requestAnimationFrame(frame);
+})();
+</script>
+<footer class="site-footer">by kiki的AI日常<br><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">京ICP备2026018722号-1</a> · <a href="https://beian.mps.gov.cn/" target="_blank" rel="noopener">京公网安备11011502039877号</a></footer></body></html>
